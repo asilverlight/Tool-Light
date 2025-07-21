@@ -1,6 +1,8 @@
 from tqdm import tqdm
 import argparse
 import re
+from transformers import AutoTokenizer
+from vllm import LLM
 import time
 import datetime
 import requests
@@ -13,6 +15,35 @@ import asyncio
 from openai import AsyncOpenAI
 from equivalence import is_equiv
 rng = np.random.default_rng(4396)
+
+model2path = {
+        'qwen2-7b-instruct': '/path/to/Qwen2-7B-Instruct',
+        'glm-4-9b-chat': "/path/to/models/ZhipuAI/glm-4-9b-chat",
+        'mistral-7b-instruct': '/path/to/Mistral-7B-Instruct-v0.3',
+        'llama2-7b-chat': '/path/to/llama-2-7b-chat-hf',
+        'llama3-8b-instruct': '/path/to/Meta-Llama-3-8B-Instruct',
+        'qwen2.5-7b-instruct': '/path/to/Qwen2.5-7B-Instruct',
+        'llama3.1-8b-instruct': '/path/to/Llama-3.1-8B-Instruct',
+        'llama3.2-1b-instruct': '/path/to/LLM-Research/Llama-3___2-1B-Instruct',
+        'llama3.2-3b-instruct': '/path/to/LLM-Research/Llama-3___2-3B-Instruct',
+        'llama3.3-70b-instruct': '/path/to/llama3.3-70B-instruct',
+        'qwen2.5-1.5b-instruct': '/path/to/Qwen/Qwen2___5-1___5B-Instruct',
+        'qwen2.5-0.5b-instruct': '/path/to/Qwen/Qwen2___5-0___5B-Instruct',
+        
+        'deepseek-llm-7b-chat': '/path/to/deepseek-ai/deepseek-llm-7b-chat',
+        'baichuan2-7b-chat': '/path/to/baichuan-inc/Baichuan2-7B-Chat',
+        'qwen2.5-3b-instruct': '/path/to/Qwen/Qwen2___5-3B-Instruct',
+        'openelm-3b-instruct': '/path/to/LLM-Research/OpenELM-3B-Instruct',
+        'qwen2.5-3b': '/path/to/Qwen/Qwen2___5-3B',
+        'gemma-7b-it': '/path/to/LLM-Research/gemma-7b-it',
+        'gemma-2-2b-it': '/path/to/LLM-Research/gemma-2-2b-it',
+        'gemma-2b-it': '/path/to/AI-ModelScope/gemma-2b-it',
+        'qwen2.5-14b-instruct': '/path/to/Qwen/Qwen2___5-14B-Instruct',
+        'qwen2.5-32b-instruct': '/path/to/Qwen/Qwen2___5-32B-Instruct',
+        'qwen2.5-72b-instruct': '/path/to/qwen2.5-72B-Instruct',
+        'qwen3-8b': '/path/to/START/models/Qwen/Qwen3-8B',
+        'e5': "/path/to/e5-base-v2",
+    }
 
 async def llm_evaluate_equivalence_single(
     client: AsyncOpenAI,
@@ -385,3 +416,30 @@ def extract_solution(solution_str):
     final_solution = final_solution.split('#### ')[1].replace(',', '')
     return final_solution
 
+def load_model(config):
+    model = LLM(
+                config['model_path'],
+                dtype=config['type'],
+                enforce_eager=True,
+                trust_remote_code=True,
+                max_model_len=config['max_input_len'],
+                gpu_memory_utilization=config['gpu_use'],
+                tensor_parallel_size=config['gpu_num'],
+            )
+    tokenizer = AutoTokenizer.from_pretrained(config['model_path'], trust_remote_code=True)
+    return model, tokenizer
+
+def extract_answer(str):
+    if '<answer>' in str:
+        start = str.index('<answer>')
+        str = str[start + len('<answer>'):]
+    if '</answer>' in str:
+        end = str.index('</answer>')
+        str = str[:end]
+    if '\\boxed{' in str:
+        start = str.index('\\boxed{')
+        str = str[start + len('\\boxed{'):]
+    if '}' in str:
+        end = str.index('}')
+        str = str[:end]
+    return str.strip()
