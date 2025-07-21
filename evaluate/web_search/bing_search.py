@@ -188,7 +188,7 @@ def extract_text_from_url(url, use_jina=False, jina_api_key=None, snippet: Optio
                 has_error = any(indicator.lower() in response.text.lower() for indicator in error_indicators) or response.text == ""
                 if has_error:
                     # If content has error, use WebParserClient as fallback
-                    client = WebParserClient("http://183.174.229.164:1241")
+                    client = WebParserClient("http://your_api:1241")
                     results = client.parse_urls([url])
                     if results and results[0]["success"]:
                         text = results[0]["content"]
@@ -230,7 +230,7 @@ def extract_text_from_url(url, use_jina=False, jina_api_key=None, snippet: Optio
                         text = soup.get_text(separator=' ', strip=True)
             except Exception as e:
                 # If normal extraction fails, try using WebParserClient
-                client = WebParserClient("http://183.174.229.164:1241")
+                client = WebParserClient("http://your_api:1241")
                 results = client.parse_urls([url])
                 if results and results[0]["success"]:
                     text = results[0]["content"]
@@ -495,7 +495,7 @@ async def extract_text_from_url_async(url: str, session: aiohttp.ClientSession, 
                 has_error = any(indicator.lower() in html.lower() for indicator in error_indicators) or html == ""
                 if has_error:
                     # If content has error, use WebParserClient as fallback
-                    client = WebParserClient("http://183.174.229.164:1241")
+                    client = WebParserClient("http://your_api:1241")
                     results = client.parse_urls([url])
                     if results and results[0]["success"]:
                         text = results[0]["content"]

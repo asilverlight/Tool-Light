@@ -41,8 +41,8 @@ do
             --counts 500 \
             --batch_size 50 \
             --data_path datas/${data_name}/test.json
-        python /home/u2024001021/agentic_search/for_quick_hand/evaluate_dgt.py \
-            --output_path /fs/archive/share/START/evaluation_dgt/${output_path}/${exp_type}_${data_name}_result.json \
+        python evaluate.py \
+            --output_path /path/to/${output_path}/${exp_type}_${data_name}_result.json \
             --task ${task} \
             --dataset_name ${data_name} \
             --use_llm \

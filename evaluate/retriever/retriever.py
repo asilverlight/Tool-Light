@@ -282,13 +282,10 @@ class DenseRetriever(BaseRetriever):
             query_batch = query_list[start_idx : start_idx + batch_size]
             batch_emb = self.encoder.encode(query_batch)
             batch_scores, batch_idxs = self.index.search(batch_emb, k=num)
-            # print(batch_idxs)
             batch_scores = batch_scores.tolist()
             batch_idxs = batch_idxs.tolist()
 
             flat_idxs = sum(batch_idxs, [])
-            # print(batch_scores)
-            # print(batch_idxs)
             batch_results = load_docs(self.corpus, flat_idxs)
             batch_results = [
                 batch_results[i * num : (i + 1) * num]
