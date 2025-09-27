@@ -1,6 +1,29 @@
 <h1 align="center"> 💡Toward Effective Tool-Integrated Reasoning via
 Self-Evolved Preference Learning</a></h1>
 
+<!-- <div align="center"> 
+
+[![Model](https://img.shields.io/badge/Model-Hugging%20Face-blue?logo=huggingface)](https://huggingface.co/collections/dongguanting/arpo-688229ff8a6143fe5b4ad8ae)
+[![Model](https://img.shields.io/badge/Model-ModelScope-blue?logo=ModelScope)](https://modelscope.cn/models/dongguanting/arpo-688229ff8a6143fe5b4ad8ae)
+[![License](https://img.shields.io/badge/LICENSE-MIT-green.svg)](https://opensource.org/licenses/MIT) 
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/release/python-390/) 
+</div> -->
+
+<div align="center">
+  <a href="https://huggingface.co/collections/dongguanting/arpo-688229ff8a6143fe5b4ad8ae">
+    <img src="https://img.shields.io/badge/Model-Hugging%20Face-blue?logo=huggingface" alt="Hugging Face Models">
+  </a>
+  <a href="https://modelscope.cn/models/dongguanting/arpo-688229ff8a6143fe5b4ad8ae">
+    <img src="https://img.shields.io/badge/Model-ModelScope-blue?logo=" alt="ModelScope Models">
+  </a>
+  <a href="https://opensource.org/licenses/MIT">
+    <img src="https://img.shields.io/badge/LICENSE-MIT-green.svg" alt="License">
+  </a>
+  <a href="https://www.python.org/downloads/release/python-390/">
+    <img src="https://img.shields.io/badge/Python-3.10+-blue.svg" alt="Python 3.10+">
+  </a>
+</div>
+
 
 ## 😃 Overview
 
