@@ -330,6 +330,8 @@ First, run the code in `Tool-Light/evaluation/deploy_qwen2.5_72B_instruct.sh` to
 
 Then, run the code in `Tool-Light/evaluation/evaluate_all_datas.sh` to evaluate the performance of the model. Here, we evaluate the **F1 score** and the **LLM-as-Judge** metric.
 
+More details for evaluation can be found in [ARPO](https://github.com/RUC-NLPIR/ARPO).
+
 5. For the measurement of the **Efficiency** and **Necessity** metrics, please run `evaluate/calculate_metrics.sh`:
 ```bash
 export PYTHONPATH=/path/to/Tool-Light/:$PYTHONPATH
