@@ -7,20 +7,28 @@ Self-Evolved Preference Learning</a></h1>
 
 **Tool-Light** is a framework focused on enabling models to efficiently complete TIR tasks. Tool-Light innovatively introduces the **Entropy-Guided Sampling Strategy** to construct the training set. Besides, it trains the model through the **Self-Evolved DPO Pipeline**. This design empowers the model to gradually acquire the ability to call tools efficiently and accurately. Results on two types of reasoning tasks demonstrate superior performance compared to traditional methods.
 
+<p align="center">
+<img width="100%" alt="image" src="/Users/aniaforge/Desktop/科研/Tool-Light/algorithm.png" />
+</p>
+
 ## 😋 Quick Start for Data Construction
 ### 1. Environment Setup
 
 In this step, we should first operate SFT on Qwen2.5-7B-Instruct model. Please first set up the environment for [Llama Factory](https://github.com/hiyouga/LLaMA-Factory).
 
 ```bash
-git clone --depth 1 https://github.com/hiyouga/LLaMA-Factory.git
-cd LLaMA-Factory
-pip install -e ".[metrics]"
+git clone https://github.com/asilverlight/Tool-Light/
+cd Tool-Light/LLaMA-Factory
+
+conda create -n sft python=3.10
+conda activate sft
+
+pip install -r requirements.txt
 ```
 
 ### 2. Conduct SFT on Qwen2.5-7B-Instruct
 
-1. Download your SFT dataset from [🤗Tool-Star-SFT-54K](https://huggingface.co/datasets/dongguanting/Tool-Star-SFT-54K) and place it in `LLaMA-Factory-main/data/final_sft_edition9.json`. Define the dataset in `dataset_info.json`.
+1. Download your SFT dataset from [🤗Tool-Star-SFT-54K](https://huggingface.co/datasets/dongguanting/Tool-Star-SFT-54K) and place it in `LLaMA-Factory-main/data/final_sft_edition9.json`. Define the dataset in `dataset_info.json`. By the way, [Tool-Star](https://github.com/RUC-NLPIR/Tool-Star) is also a wonderful work:)
 
 2. In `LLaMA-Factory-main/examples/train_full/llama_factory.sh`, execute the following codes:
 
@@ -32,16 +40,9 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 llamafactory-cli train /path/to/LLaMA-Factory-main/
 ### 3. Inference Environment Setup
 First, configure the required environment.
 ```bash
-#create env
-conda create -n toollight python==3.10
-conda activate toollight
-
-# install torch & flash-atten
-pip3 install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu124
-pip3 install flash-attn --no-build-isolation
-
-# This is our env freeze file. You can install it as a supplement or use it for checking.
-pip install -r ./Tool-Light/requirements.txt
+conda create -n inference python==3.10
+conda activate inference
+pip install -r ./Tool-Light/evaluation/requirement.txt
 ```
 ### 4. Use SFT Model to Select Source Datas
 Use the SFT model to directly perform inference on `LLaMA-Factory-main/data/final_sft_edition9.json`, and screen out the data sources for DPO training. You can execute the following code:
@@ -102,19 +103,23 @@ This part is the same as **Environment Setup** in **Quick Start for Data Constru
 
 ```bash
 module load cuda/12.1.1
+conda activate sft
 cd /path/to/LLaMA-Factory-main
 CUDA_VISIBLE_DEVICES=0,1 llamafactory-cli train /path/to/LLaMA-Factory-main/examples/train_full/step1_dpo.yaml
 ```
-3. Enter the `Tool-Light` environment. Then, use the DPO model to sample again from the same 4000 data sources. After that, screen the positive-negative examples according to the criteria of the Self-Evolved On-Policy DPO Loop phase.
+3. Enter the `inference` environment. Then, use the DPO model to sample again from the same 4000 data sources. After that, screen the positive-negative examples according to the criteria of the Self-Evolved On-Policy DPO Loop phase.
 
 4. Define this phase's training data, and execute the following codes in `LLaMA-Factory-main/examples/train_full/llama_factory.sh`:
 ```bash
 module load cuda/12.1.1
+conda activate sft
 cd /path/to/LLaMA-Factory-main
 CUDA_VISIBLE_DEVICES=0,1 llamafactory-cli train /path/to/LLaMA-Factory-main/examples/train_full/step2_dpo.yaml
 ```
 ### 3. Evaluate the Performance of Trained Model
-1. Enter the `Tool-Light` environment.
+
+1. Enter the `inference` environment.
+
 2. Deploy the retriever for performing search tasks on Wikipedia-based datasets. We provide a Wikipedia retriever service implemented using FlashRAG and FastAPI. Before starting the retriever serving, you need to download the [pre-indexed Wikipedia](https://github.com/RUC-NLPIR/FlashRAG?tab=readme-ov-file#index), [Wikipedia corpus, and corresponding retriever models](https://github.com/RUC-NLPIR/FlashRAG/blob/main/docs/original_docs/reproduce_experiment.md#preliminary). The corpuses used can be found [here](https://huggingface.co/datasets/RUC-NLPIR/FlashRAG_datasets/tree/main/retrieval-corpus), and Index construction method can be found [here](https://github.com/RUC-NLPIR/FlashRAG/tree/main?tab=readme-ov-file#rocket-quick-start).
 
 More details can be found in the [FlashRAG documentation](https://github.com/RUC-NLPIR/FlashRAG/tree/main?tab=readme-ov-file#rocket-quick-start).
@@ -127,75 +132,203 @@ python host_wiki.py \
     --num_retriever {num_retriever} \
     --port {port}
 ```
-3. Deploy judging model. You can execute the following code in `evaluate/vllm_server.sh`:
+3. Deploy judging model. You can execute the following code:
 ```bash
-module load cuda/12.5.1
-module load gcc/13.1.0
-
-CUDA_VISIBLE_DEVICES=0,1,2,3 vllm serve /path/to/Qwen2___5-72B-Instruct \
-    --served-model-name Qwen2.5-72B-Instruct \
-    --tensor-parallel-size 4 \
-    --gpu-memory-utilization 0.95 \
-    --trust-remote-code \
-    --uvicorn-log-level debug \
-    --host 0.0.0.0 \
-    --port 28710
+bash evaluate/deploy_qwen2.5_72B_instruct.sh
 ```
-4. Execute code in `evaluate/test.sh` to evaluate the performance of the model. Here, we evaluate the **F1 score** and the **LLM-as-Judge** metric:
+4. Execute code in `Tool-Light/evaluation/infer_local_sds.sh` to evaluate the performance of the model. 
+
+First, run the following code in `Tool-Light/evaluation/infer_local_sds.sh` for inference:
 ```bash
-export CUDA_VISIBLE_DEVICES=0,1,2,3
-export TOKENIZERS_PARALLELISM=true
-module load cuda/12.5.1
-module load gcc/13.1.0
+#!/bin/bash
+# Switch to the script's directory
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+cd "$SCRIPT_DIR"
+echo "Switched to directory: $SCRIPT_DIR"
 
+# Set Python environment
+export PYTHONPATH=$(pwd):$PYTHONPATH
 
+# datasets
 data_names=(
-    "hotpotqa"
+    "aime24"
+    "aime25"
+    "amc23"
+    "math500"
+    "math"
+    "gsm8k"
     "2wiki"
     "bamboogle"
     "musique"
-    "aime24"
-    "aime25"
-    "gsm8k"
-    "math"
-    "math500"
-    "amc23"
+    "hotpotqa"
 )
 
-tasks=("qa" "qa" "qa" "qa" "math" "math" "math" "math" "math" "math") # 
-exp_types=("DPO") 
-models=("/path/to/tool-light")  
-output_paths=("dpo") 
-for i in "${!data_names[@]}"
-do
-    data_name="${data_names[$i]}"
-    task="${tasks[$i]}"
-    for j in "${!exp_types[@]}"
-    do
-        exp_type="${exp_types[$j]}"
-        output_path="${output_paths[$j]}"
-        python test.py \
-            --model_path "${models[$j]}" \
-            --dataset_name "${data_name}" \
-            --task "${task}" \
-            --gpu_use 0.95 \
-            --max_tokens 8192 \
-            --max_input_len 32768 \
-            --temperature 1 \
-            --output_path /path/to/${output_path}/${exp_type}_${data_name}_result.json \
-            --counts 500 \
-            --batch_size 50 \
-            --data_path datas/${data_name}/test.json
-        python evaluate.py \
-            --output_path /path/to/${output_path}/${exp_type}_${data_name}_result.json \
-            --task ${task} \
-            --dataset_name ${data_name} \
-            --use_llm \
-            --extract_answer
-    done
+# Reasoning model endpoints
+infer_endpoints=(
+    "http://localhost:8001/v1"
+    "http://localhost:8002/v1"
+    "http://localhost:8003/v1"
+    "http://localhost:8004/v1"
+    "http://localhost:8005/v1"
+    "http://localhost:8006/v1"
+    "http://localhost:8007/v1"
+    "http://localhost:8008/v1"
+)  
+
+ENDPOINTS=$(echo "${infer_endpoints[@]}" | tr '\n' ' ')
+
+SAMPLE_TIMEOUT=900  # Timeout for one sample
+
+EXP_NAME="your_model_name"
+MODEL_PATH="/path/to/your_model_path"
+OUTPUT_PATH="/path/to/your_output_path"   
+DATA_PATH="data"           
+
+with_tools=true
+if [ "$with_tools" = true ]; then
+    PROMPT_TYPE="code_search"          # Prompt type (code_search, search, math, base)
+    MAX_PYTHON_TIMES=5                 # Max Python tool invocation times
+    MAX_SEARCH_TIMES=5                # Max search tool invocation times
+else
+    PROMPT_TYPE="base"                 # Prompt type (code_search, search, math, base)
+    MAX_PYTHON_TIMES=0                 # Max Python tool invocation times
+    MAX_SEARCH_TIMES=0                 # Max search tool invocation times
+fi
+
+
+# VLLM config
+echo "Inference endpoints: $ENDPOINTS"
+API_KEYS=""                     # API keys list, corresponds to endpoints; empty means default "EMPTY"
+DEFAULT_MODEL=$EXP_NAME  # Default model name
+
+# Generation parameters
+TEMPERATURE=1                      # Temperature parameter
+MAX_TOKENS=4096                     # Max tokens to generate
+TOP_P=0.95                          # Top-p truncation
+TOP_K=20                           # Top-k truncation
+MIN_P=0.0                          # Minimum probability threshold
+REPETITION_PENALTY=1.1             # Repetition penalty factor
+INCLUDE_STOP_STR=true              # Whether to include stop string in output
+
+# Inference configuration
+BATCH_SIZE=8                       # Batch size
+MAX_CONCURRENT=50                  # Max concurrent requests
+COUNTS=500                        # Number of samples to process
+
+# Tool configurations
+CONDA_PATH="/path/to/your/conda/"   # Conda installation path
+CONDA_ENV="evaluation_arpo"                                # Conda environment name
+PYTHON_MAX_CONCURRENT=32                        # Max concurrent Python executor
+BING_API_KEY="<your_bing_api_key>"  # Bing Search API key
+BING_ZONE="<your_bing_zone>"                        # Bing search zone
+SEARCH_MAX_RESULTS=5                            # Max number of search results
+SEARCH_RESULT_LENGTH=1000                        # Max length per search result
+BING_REQUESTS_PER_SECOND=32.0                    # Max Bing search requests per second
+BING_MAX_RETRIES=3                              # Max Bing search retries
+BING_RETRY_DELAY=1.0                            # Bing search retry delay (seconds)
+MAX_SEQUENCE_LENGTH=20000                        # Maximum sequence length for summarization
+
+# Simple deep search config
+SUMM_MODEL_URLS="http://localhost:8020/v1"
+SUMM_MODEL_NAME="Qwen2.5-7B-Instruct"
+SUMM_MODEL_PATH="/path/to/Qwen2.5-7B-Instruct"
+SEARCH_CACHE_FILE="/path/to/search_cache.db"
+URL_CACHE_FILE="/path/to/search_url_cache.db"
+USE_LOCAL_SEARCH=false
+LOCAL_SEARCH_URL="0.0.0.0:1243"
+COMPATIBLE_SEARCH=true
+USE_SDS=true
+
+for DATASET_NAME in "${data_names[@]}"; do
+    # Build command line arguments
+    CMD="python -u infer.py"
+    CMD+=" --endpoints $ENDPOINTS"
+    CMD+=" --model_path $MODEL_PATH"
+    CMD+=" --default_model $DEFAULT_MODEL"
+
+    # If API_KEYS is not empty, add the parameter
+    if [ ! -z "$API_KEYS" ]; then
+        CMD+=" --api_keys $API_KEYS"
+    fi
+
+    # Add generation parameters
+    CMD+=" --temperature $TEMPERATURE"
+    CMD+=" --max_tokens $MAX_TOKENS"
+    CMD+=" --top_p $TOP_P"
+    CMD+=" --top_k $TOP_K"
+    CMD+=" --min_p $MIN_P"
+    CMD+=" --repetition_penalty $REPETITION_PENALTY"
+    CMD+=" --include_stop_str_in_output $INCLUDE_STOP_STR"
+
+    # Add inference config parameters
+    CMD+=" --max_concurrent_requests $MAX_CONCURRENT"
+    CMD+=" --dataset_name $DATASET_NAME"
+    CMD+=" --output_path $OUTPUT_PATH"
+    CMD+=" --prompt_type $PROMPT_TYPE"
+    CMD+=" --counts $COUNTS"
+    CMD+=" --max_python_times $MAX_PYTHON_TIMES"
+    CMD+=" --max_search_times $MAX_SEARCH_TIMES"
+    CMD+=" --sample_timeout $SAMPLE_TIMEOUT"
+
+    # If DATA_PATH is not empty, add the parameter
+    if [ ! -z "$DATA_PATH" ]; then
+        CMD+=" --data_path $DATA_PATH"
+    fi
+
+    # Add tool config parameters
+    CMD+=" --conda_path $CONDA_PATH"
+    CMD+=" --conda_env $CONDA_ENV"
+    CMD+=" --python_max_concurrent $PYTHON_MAX_CONCURRENT"
+    CMD+=" --bing_api_key $BING_API_KEY"
+    CMD+=" --bing_zone $BING_ZONE"
+    CMD+=" --search_max_results $SEARCH_MAX_RESULTS"
+    CMD+=" --search_result_length $SEARCH_RESULT_LENGTH"
+    CMD+=" --bing_requests_per_second $BING_REQUESTS_PER_SECOND"
+    CMD+=" --bing_max_retries $BING_MAX_RETRIES"
+    CMD+=" --bing_retry_delay $BING_RETRY_DELAY"
+
+    # Additional parameters for search tool
+    CMD+=" --summ_model_urls $SUMM_MODEL_URLS"
+    CMD+=" --summ_model_name $SUMM_MODEL_NAME"
+    CMD+=" --summ_model_path $SUMM_MODEL_PATH"
+    CMD+=" --search_cache_file $SEARCH_CACHE_FILE"
+    CMD+=" --url_cache_file $URL_CACHE_FILE"
+
+    if [ "$COMPATIBLE_SEARCH" = true ]; then
+        CMD+=" --use_local_search"
+        CMD+=" --local_search_url $LOCAL_SEARCH_URL"
+        CMD+=" --compatible_search"
+    else
+        if [ "$USE_LOCAL_SEARCH" = true ]; then
+            CMD+=" --use_local_search"
+            CMD+=" --local_search_url $LOCAL_SEARCH_URL"
+        fi
+    fi
+
+    CMD+=" --max_sequence_length $MAX_SEQUENCE_LENGTH"
+
+    if [ "$USE_SDS" = true ]; then
+        CMD+=" --use_sds"
+    fi
+
+    # Create output directory
+    OUTPUT_DIR=$(dirname "$OUTPUT_PATH")
+    mkdir -p "$OUTPUT_DIR"
+    echo "Created output directory: $OUTPUT_DIR"
+
+    echo $CMD
+
+    # Execute command
+    eval $CMD | tee logs/infer.log 2>&1
 done
 ```
-5. For the measurement of the **Efficiency** and **Effectiveness** metrics, please run `evaluate/calculate_metrics.sh`:
+And then, you can test the metrics of the model.
+
+First, run the code in `Tool-Light/evaluation/deploy_qwen2.5_72B_instruct.sh` to deploy the judging model.
+
+Then, run the code in `Tool-Light/evaluation/evaluate_all_datas.sh` to evaluate the performance of the model. Here, we evaluate the **F1 score** and the **LLM-as-Judge** metric.
+
+5. For the measurement of the **Efficiency** and **Necessity** metrics, please run `evaluate/calculate_metrics.sh`:
 ```bash
 export PYTHONPATH=/path/to/Tool-Light/:$PYTHONPATH
 
@@ -214,7 +347,7 @@ data_names=(
 
 methods=(
     "efficiency"
-    "accuracy"
+    "necessity"
 )
 
 for data_name in "${data_names[@]}"; do
@@ -229,4 +362,4 @@ for data_name in "${data_names[@]}"; do
     done
 done
 ```
- Note that for the measurement of these two metrics, you need to run `evaluate/test.sh` before. For the measurement of **Effectiveness**, you need to obtain the F1 scores and the LLM-as-Judge metrics for all baselines in advance.
+ Note that for the measurement of these two metrics, you need to run `Tool-Light/evaluation/evaluate_all_datas.sh` before. For the measurement of **Necessity**, you need to obtain the F1 scores and the LLM-as-Judge metrics for all baselines in advance.
