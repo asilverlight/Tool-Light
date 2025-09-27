@@ -10,10 +10,10 @@ Self-Evolved Preference Learning</a></h1>
 </div> -->
 
 <div align="center">
-  <a href="https://huggingface.co/collections/dongguanting/arpo-688229ff8a6143fe5b4ad8ae">
+  <a href="https://huggingface.co/zhangboguodong/Tool-Light-Qwen2.5-7B-it">
     <img src="https://img.shields.io/badge/Model-Hugging%20Face-blue?logo=huggingface" alt="Hugging Face Models">
   </a>
-  <a href="https://modelscope.cn/models/dongguanting/arpo-688229ff8a6143fe5b4ad8ae">
+  <a href="https://modelscope.cn/models/zhangboguodong/Tool_Light_Qwen2.5_7B_it">
     <img src="https://img.shields.io/badge/Model-ModelScope-blue?logo=" alt="ModelScope Models">
   </a>
   <a href="https://opensource.org/licenses/MIT">
