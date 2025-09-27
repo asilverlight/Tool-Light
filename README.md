@@ -19,7 +19,7 @@ In this step, we should first operate SFT on Qwen2.5-7B-Instruct model. Please f
 
 ```bash
 git clone https://github.com/asilverlight/Tool-Light/
-cd Tool-Light/LLaMA-Factory
+cd Tool-Light/LLaMA-Factory-main
 
 conda create -n sft python=3.10
 conda activate sft
