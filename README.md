@@ -7,9 +7,10 @@ Self-Evolved Preference Learning</a></h1>
 
 **Tool-Light** is a framework focused on enabling models to efficiently complete TIR tasks. Tool-Light innovatively introduces the **Entropy-Guided Sampling Strategy** to construct the training set. Besides, it trains the model through the **Self-Evolved DPO Pipeline**. This design empowers the model to gradually acquire the ability to call tools efficiently and accurately. Results on two types of reasoning tasks demonstrate superior performance compared to traditional methods.
 
-<p align="center">
-<img width="100%" alt="image" src="/Users/aniaforge/Desktop/科研/Tool-Light/algorithm.png" />
-</p>
+<!-- <p align="center">
+<img width="100%" alt="image" src="https://github.com/asilverlight/Tool-Light/blob/main/figs/algorithm.png" />
+</p> -->
+![image](figs/algorithm.png)
 
 ## 😋 Quick Start for Data Construction
 ### 1. Environment Setup
@@ -90,6 +91,7 @@ python entropy_guided_sample.py \
     --max_rollout_steps 3 \
     --max_rollout_counts 3
 ```
+![image](figs/tree_sampling.png)
 ### 6. Construct Positive-Negative Examples According to Criteria
 For Pre-Aligned DPO and Self-Evolved On-Policy DPO parts, we design different criteria for screening positive-negative examples. You can refer to the description in the paper, and then construct the training set for the two types of sampled data.
 
